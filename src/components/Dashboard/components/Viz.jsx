@@ -31,34 +31,34 @@ function Viz({ player, playerData, averageData }) {
   }, [playerData])
 
 
-  useEffect(() => {
-    ChartJS.register({
-      id: "custom_canvas_background_color",
-      beforeDraw: (chart) => {
-        const ctx = chart.canvas.getContext("2d");
-        const {chartArea: {top, bottom, left, right, width}} = chart
-        ctx.save();
-        ctx.globalCompositeOperation = "destination-over";
-        ctx.fillStyle = "rgb(255, 127, 127)"
-        ctx.beginPath();
-        ctx.moveTo(left, top);
-        ctx.lineTo(left, bottom);
-        ctx.lineTo(right, bottom);
-        ctx.closePath()
-        ctx.fill()
-        ctx.fillStyle = "lightGreen"
-        ctx.beginPath();
-        ctx.moveTo(left, top);
-        ctx.lineTo(right, top);
-        ctx.lineTo(right, bottom);
-        ctx.closePath()
-        ctx.fill()
-        ctx.restore();
-        // console.log(averageData[0].x)
-        //chart.update();
-      }
-    })
-  }, [averageData])
+//   useEffect(() => {
+//     ChartJS.register({
+//       id: "custom_canvas_background_color",
+//       beforeDraw: (chart) => {
+//         const ctx = chart.canvas.getContext("2d");
+//         const {chartArea: {top, bottom, left, right, width}} = chart
+//         ctx.save();
+//         ctx.globalCompositeOperation = "destination-over";
+//         ctx.fillStyle = "rgb(255, 127, 127)"
+//         ctx.beginPath();
+//         ctx.moveTo(left, top);
+//         ctx.lineTo(left, bottom);
+//         ctx.lineTo(right, bottom);
+//         ctx.closePath()
+//         ctx.fill()
+//         ctx.fillStyle = "lightGreen"
+//         ctx.beginPath();
+//         ctx.moveTo(left, top);
+//         ctx.lineTo(right, top);
+//         ctx.lineTo(right, bottom);
+//         ctx.closePath()
+//         ctx.fill()
+//         ctx.restore();
+//         // console.log(averageData[0].x)
+//         //chart.update();
+//       }
+//     })
+//   }, [averageData])
   
 
   var options = {

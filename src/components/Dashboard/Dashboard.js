@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Dashboard.css';
 import DrillMatrix from './components/DrillMatrix';
 import Dropdown from './components/Dropdown';
+import LoadChart from './components/LoadChart';
 import Viz from './components/Viz';
 import mbbdata from './data/mbbdata.json';
 import { Box, Tab, Tabs } from '@mui/material';
@@ -68,6 +69,7 @@ export default function Dashboard() {
                     <Tab label="Mechanical vs Physio Graph" {...a11yProps(0)} />
                     <Tab label="Phases Graph" {...a11yProps(1)} />
                     <Tab label="Drill Matrix" {...a11yProps(2)} />
+                    <Tab label="Load Chart" {...a11yProps(3)} />
                 </Tabs>
             </Box>
             <Container maxWidth="md" sx={{ py: 4 }}>
@@ -88,6 +90,9 @@ export default function Dashboard() {
                 </TabPanel>
                 <TabPanel value={tab} index={2}>
                     <DrillMatrix />
+                </TabPanel>
+                <TabPanel value={tab} index={3}>
+                    <LoadChart />
                 </TabPanel>
             </Container>
         </>

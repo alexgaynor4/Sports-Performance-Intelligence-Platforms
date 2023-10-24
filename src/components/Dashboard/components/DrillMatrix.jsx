@@ -130,7 +130,7 @@ export default function DrillMatrix() {
     };
 
     useEffect(() => {
-        fetch('http://localhost:8080/drills')
+        fetch('http://localhost:8080/drills-by-player')
             .then((response) => response.json())
             .then((data) => {
                 const players = Object.keys(data)

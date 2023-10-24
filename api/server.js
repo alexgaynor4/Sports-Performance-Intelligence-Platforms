@@ -38,11 +38,25 @@ const normalizePhase = (phase) => {
     ];
 };
 
-app.use('/drills', async (req, res) => {
+const normalizePhaseCumulativeOnly = (phase) => {
+    const dist = phase.distance_total / 1609;
+    return [
+        dist,
+        phase.accel_load_accum,
+        phase.mechanical_load,
+        phase.physio_load,
+    ];
+};
+
+app.use('/drills-by-player', async (req, res) => {
     const { start, end } = req.query;
     const phaseList = await phases(start, end);
     const phasesByPlayer = phaseList.reduce((map, phase) => {
-        if (phase.type === 'Drill' && phase.time_on_playing_field && phase.description) {
+        if (
+            phase.type === 'Drill' &&
+            phase.time_on_playing_field &&
+            phase.description
+        ) {
             const id = phase.player_id;
             let phaseMap;
             if (!map[id]) {
@@ -58,7 +72,7 @@ app.use('/drills', async (req, res) => {
                         firstName: phase.first_name,
                         lastName: phase.last_name,
                         number: phase.number,
-                        group
+                        group,
                     },
                     phases: phaseMap,
                 };
@@ -94,6 +108,66 @@ app.use('/drills', async (req, res) => {
         });
     });
     res.json(phasesByPlayer);
+});
+
+app.use('/drills-by-date', async (req, res) => {
+    const { start, end } = req.query;
+    const phaseList = await phases(start, end);
+    const players = {};
+    const phasesByDate = phaseList.reduce((map, phase) => {
+        if (
+            phase.type === 'Drill' &&
+            phase.time_on_playing_field &&
+            phase.description
+        ) {
+            const id = phase.player_id;
+            if (!players[id]) {
+                const group = JSON.parse(phase.group_names)[
+                    Object.values(JSON.parse(phase.group_assignment)).findIndex(
+                        (assignment) =>
+                            assignment.some(({ player_id }) => id === player_id)
+                    )
+                ];
+                players[id] = {
+                    info: {
+                        firstName: phase.first_name,
+                        lastName: phase.last_name,
+                        number: phase.number,
+                        group,
+                    },
+                };
+            }
+            const date = phase.start_phase.slice(0, 10);
+            let cumulativeMetrics;
+            if (!map[date]) {
+                cumulativeMetrics = [0, 0, 0, 0];
+                map[date] = { [id]: cumulativeMetrics };
+            } else {
+                const playerMap = map[date];
+                if (!playerMap[id]) {
+                    cumulativeMetrics = [0, 0, 0, 0];
+                    playerMap[id] = cumulativeMetrics;
+                } else {
+                    cumulativeMetrics = playerMap[id];
+                }
+            }
+            const normalizedPhase = normalizePhaseCumulativeOnly(phase);
+            normalizedPhase.forEach((value, i) => {
+                cumulativeMetrics[i] += value;
+            });
+        }
+        return map;
+    }, {});
+    Object.keys(phasesByDate).forEach((date) => {
+        const playerMap = phasesByDate[date];
+        Object.keys(playerMap).forEach((id) => {
+            playerMap[id] = playerMap[id].reduce((map, value, i) => {
+                map[METRIC_LABELS[i]] = value;
+                return map;
+            }, {});
+        });
+    });
+    res.json({ players, data: phasesByDate });
 });
 
 app.listen(8080, () => console.log('API is running on http://localhost:8080'));
