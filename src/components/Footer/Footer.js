@@ -5,7 +5,7 @@ function Footer() {
   return (
     <div className="footer">
 
-      <p> &copy; 2022 VIP Program</p>
+      <p> &copy; 2024 VIP Program</p>
     </div>
   );
 }
