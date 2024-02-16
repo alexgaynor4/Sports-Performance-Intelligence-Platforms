@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
-const { phases } = require('./kinexon');
+const { phases, sessions } = require('./kinexon');
 
 app.use(cors());
 app.use('/login', (req, res) => {
@@ -112,62 +112,63 @@ app.use('/drills-by-player', async (req, res) => {
 
 app.use('/drills-by-date', async (req, res) => {
     const { start, end } = req.query;
-    const phaseList = await phases(start, end);
+    const sessionList = await sessions(start, end);
     const players = {};
-    const phasesByDate = phaseList.reduce((map, phase) => {
-        if (
-            phase.type === 'Drill' &&
-            phase.time_on_playing_field &&
-            phase.description
-        ) {
-            const id = phase.player_id;
-            if (!players[id]) {
-                const group = JSON.parse(phase.group_names)[
-                    Object.values(JSON.parse(phase.group_assignment)).findIndex(
-                        (assignment) =>
-                            assignment.some(({ player_id }) => id === player_id)
-                    )
-                ];
-                players[id] = {
-                    info: {
-                        firstName: phase.first_name,
-                        lastName: phase.last_name,
-                        number: phase.number,
-                        group,
-                    },
-                };
-            }
-            const date = phase.start_phase.slice(0, 10);
-            let cumulativeMetrics;
-            if (!map[date]) {
-                cumulativeMetrics = [0, 0, 0, 0];
-                map[date] = { [id]: cumulativeMetrics };
-            } else {
-                const playerMap = map[date];
-                if (!playerMap[id]) {
-                    cumulativeMetrics = [0, 0, 0, 0];
-                    playerMap[id] = cumulativeMetrics;
-                } else {
-                    cumulativeMetrics = playerMap[id];
-                }
-            }
-            const normalizedPhase = normalizePhaseCumulativeOnly(phase);
-            normalizedPhase.forEach((value, i) => {
-                cumulativeMetrics[i] += value;
-            });
+    const sessionsByDate = sessionList.reduce((map, session) => {
+        const id = session.player_id;
+        if (!players[id]) {
+            const group = JSON.parse(session.group_names)[
+                Object.values(JSON.parse(session.group_assignment)).findIndex(
+                    (assignment) =>
+                        assignment.some(({ player_id }) => id === player_id)
+                )
+            ];
+            players[id] = {
+                info: {
+                    firstName: session.first_name,
+                    lastName: session.last_name,
+                    number: session.number,
+                    group,
+                },
+            };
         }
+        const date = session.start_session.slice(0, 10);
+        const type = ['Game', 'Match', 'Shootaround'].includes(session.type)
+            ? 'Game'
+            : 'Practice';
+        let cumulativeMetrics;
+        if (!map[date]) {
+            cumulativeMetrics = [0, 0, 0, 0];
+            map[date] = { [type]: { [id]: cumulativeMetrics } };
+        } else {
+            if (!map[date][type]) {
+                map[date][type] = {};
+            }
+            const playerMap = map[date][type];
+            if (!playerMap[id]) {
+                cumulativeMetrics = [0, 0, 0, 0];
+                playerMap[id] = cumulativeMetrics;
+            } else {
+                cumulativeMetrics = playerMap[id];
+            }
+        }
+        const normalizedSession = normalizePhaseCumulativeOnly(session);
+        normalizedSession.forEach((value, i) => {
+            cumulativeMetrics[i] += value;
+        });
         return map;
     }, {});
-    Object.keys(phasesByDate).forEach((date) => {
-        const playerMap = phasesByDate[date];
-        Object.keys(playerMap).forEach((id) => {
-            playerMap[id] = playerMap[id].reduce((map, value, i) => {
-                map[METRIC_LABELS[i]] = value;
-                return map;
-            }, {});
+    Object.keys(sessionsByDate).forEach((date) => {
+        Object.values(sessionsByDate[date]).forEach((playerMap) => {
+            Object.keys(playerMap).forEach((id) => {
+                playerMap[id] = playerMap[id].reduce((map, value, i) => {
+                    map[METRIC_LABELS[i]] = value;
+                    return map;
+                }, {});
+            });
         });
     });
-    res.json({ players, data: phasesByDate });
+    res.json({ players, data: sessionsByDate });
 });
 
 app.listen(8080, () => console.log('API is running on http://localhost:8080'));

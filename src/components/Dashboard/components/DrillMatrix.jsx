@@ -133,6 +133,7 @@ export default function DrillMatrix() {
         fetch('http://localhost:8080/drills-by-player')
             .then((response) => response.json())
             .then((data) => {
+                if (!data.size) return;
                 const players = Object.keys(data)
                     .sort(
                         (a, b) =>

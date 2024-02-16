@@ -90,7 +90,9 @@ export default function LoadChart() {
                 );
                 setPlayer([players[0]]);
                 const metrics = Object.keys(
-                    Object.values(Object.values(response.data)[0])[0]
+                    Object.values(
+                        Object.values(Object.values(response.data)[0])[0]
+                    )[0]
                 );
                 setMetrics(metrics);
                 setMetric(metrics[0]);
@@ -106,18 +108,38 @@ export default function LoadChart() {
             labels: Object.keys(data),
             datasets: [
                 {
-                    label: metric,
-                    data: Object.values(data).map((stats) => {
+                    label: 'Practice',
+                    data: Object.values(data).map((types) => {
                         let value = 0;
-                        for (const id in stats) {
-                            if (player.includes(parseInt(id))) {
-                                value += stats[id][metric];
+                        const stats = types['Practice'];
+                        if (stats) {
+                            for (const id in stats) {
+                                if (player.includes(parseInt(id))) {
+                                    value += stats[id][metric];
+                                }
                             }
                         }
                         return value;
                     }),
                     backgroundColor: 'rgba(0, 48, 87, 0.75)',
                     borderColor: 'rgba(0, 48, 87, 1)',
+                },
+                {
+                    label: 'Game',
+                    data: Object.values(data).map((types) => {
+                        let value = 0;
+                        const stats = types['Game'];
+                        if (stats) {
+                            for (const id in stats) {
+                                if (player.includes(parseInt(id))) {
+                                    value += stats[id][metric];
+                                }
+                            }
+                        }
+                        return value;
+                    }),
+                    backgroundColor: 'rgba(179, 163, 105, 0.75)',
+                    borderColor: 'rgba(179, 163, 105, 1)',
                 },
             ],
         };
