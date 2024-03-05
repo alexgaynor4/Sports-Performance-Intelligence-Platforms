@@ -110,7 +110,7 @@ app.use('/drills-by-player', async (req, res) => {
     res.json(phasesByPlayer);
 });
 
-app.use('/drills-by-date', async (req, res) => {
+app.use('/metrics-by-date', async (req, res) => {
     const { start, end } = req.query;
     const sessionList = await sessions(start, end);
     const players = {};

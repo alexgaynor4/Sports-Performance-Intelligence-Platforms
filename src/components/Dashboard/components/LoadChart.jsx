@@ -61,7 +61,7 @@ export default function LoadChart() {
     const [order, setOrder] = useState('desc');
 
     useEffect(() => {
-        fetch('http://localhost:8080/drills-by-date')
+        fetch('http://localhost:8080/metrics-by-date')
             .then((response) => response.json())
             .then((response) => {
                 const playerData = response.players;
