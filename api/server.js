@@ -3,6 +3,8 @@ const app = express();
 const cors = require('cors');
 const { phases, sessions } = require('./kinexon');
 
+app.set('json spaces', 2)
+
 app.use(cors());
 app.use('/login', (req, res) => {
     res.send({
