@@ -7,6 +7,7 @@ import Viz from './components/Viz';
 import mbbdata from './data/mbbdata.json';
 import { Box, Tab, Tabs } from '@mui/material';
 import { Container } from '@mui/system';
+import GameSummary from './components/GameSummary';
 
 export default function Dashboard() {
     const [person, setPerson] = useState('Lance Terry');
@@ -70,6 +71,7 @@ export default function Dashboard() {
                     <Tab label="Phases Graph" {...a11yProps(1)} />
                     <Tab label="Drill Matrix" {...a11yProps(2)} />
                     <Tab label="Load Chart" {...a11yProps(3)} />
+                    <Tab label="Game Reports" {...a11yProps(3)} />
                 </Tabs>
             </Box>
             <Container maxWidth="md" sx={{ py: 4 }}>
@@ -93,6 +95,9 @@ export default function Dashboard() {
                 </TabPanel>
                 <TabPanel value={tab} index={3}>
                     <LoadChart />
+                </TabPanel>
+                <TabPanel value={tab} index={4}>
+                    <GameSummary />
                 </TabPanel>
             </Container>
         </>

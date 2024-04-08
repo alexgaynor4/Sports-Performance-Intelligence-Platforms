@@ -3,7 +3,7 @@ const app = express();
 const cors = require('cors');
 const { phases, sessions } = require('./kinexon');
 
-app.set('json spaces', 2)
+app.set('json spaces', 2);
 
 app.use(cors());
 app.use('/login', (req, res) => {
@@ -22,6 +22,14 @@ const METRIC_LABELS = [
     'Acceleration Load / min.',
     'Mechanical Load / min.',
     'Physio Load / min.',
+];
+
+const GAME_STAT_LABELS = [
+    'Game Load',
+    'Max. Jump Height',
+    'Max. Speed',
+    'Workload Zones',
+    'Intensity Categories',
 ];
 
 const normalizePhase = (phase) => {
@@ -47,6 +55,28 @@ const normalizePhaseCumulativeOnly = (phase) => {
         phase.accel_load_accum,
         phase.mechanical_load,
         phase.physio_load,
+    ];
+};
+
+const normalizeGameSession = (phase) => {
+    return [
+        [phase.accel_load_accum, phase.mechanical_load, phase.physio_load],
+        (phase.jump_height_max ?? 0) * 39.37,
+        (phase.speed_max ?? 0) * 2.237,
+        [
+            phase.distance_speed_category1,
+            phase.distance_speed_category2,
+            phase.distance_speed_category3,
+            phase.distance_speed_category4,
+            phase.distance_speed_category5,
+            phase.distance_speed_category6,
+        ].map((val) => (val ?? 0) * 3.281),
+        [
+            phase.load_acceleration_load_category1 ?? 0,
+            phase.load_acceleration_load_category2 ?? 0,
+            phase.load_acceleration_load_category3 ?? 0,
+            phase.load_acceleration_load_category4 ?? 0,
+        ],
     ];
 };
 
@@ -164,10 +194,55 @@ app.use('/metrics-by-date', async (req, res) => {
         Object.values(sessionsByDate[date]).forEach((playerMap) => {
             Object.keys(playerMap).forEach((id) => {
                 playerMap[id] = playerMap[id].reduce((map, value, i) => {
-                    map[METRIC_LABELS[i]] = value;
+                    map[GAME_STAT_LABELS[i]] = value;
                     return map;
                 }, {});
             });
+        });
+    });
+    res.json({ players, data: sessionsByDate });
+});
+
+app.use('/game-stats-by-date', async (req, res) => {
+    const { start, end } = req.query;
+    const sessionList = await sessions(start, end);
+    const players = {};
+    const sessionsByDate = sessionList.reduce((map, session) => {
+        const id = session.player_id;
+        if (!players[id]) {
+            const group = JSON.parse(session.group_names)[
+                Object.values(JSON.parse(session.group_assignment)).findIndex(
+                    (assignment) =>
+                        assignment.some(({ player_id }) => id === player_id)
+                )
+            ];
+            players[id] = {
+                info: {
+                    firstName: session.first_name,
+                    lastName: session.last_name,
+                    number: session.number,
+                    group,
+                },
+            };
+        }
+        const date = session.start_session.slice(0, 10);
+        if (!['Game', 'Match'].includes(session.type)) {
+            return map;
+        }
+        const normalizedSession = normalizeGameSession(session);
+        if (!map[date]) {
+            map[date] = {};
+        }
+        map[date][id] = normalizedSession;
+        return map;
+    }, {});
+    Object.keys(sessionsByDate).forEach((date) => {
+        const playerMap = sessionsByDate[date];
+        Object.keys(playerMap).forEach((id) => {
+            playerMap[id] = playerMap[id].reduce((map, value, i) => {
+                map[GAME_STAT_LABELS[i]] = value;
+                return map;
+            }, {});
         });
     });
     res.json({ players, data: sessionsByDate });
